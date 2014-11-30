@@ -1,0 +1,12 @@
+17386c17386
+< Addr: 0x513eac80 MSI_protocol - state: I
+---
+> Addr: 0x513eac80 MSI_protocol - state: S
+19120c19120
+< Addr: 0x29115bc0 MSI_protocol - state: I
+---
+> Addr: 0x29115bc0 MSI_protocol - state: S
+19795c19795
+< Cache Misses:         1480 misses
+---
+> Cache Misses:         1682 misses
