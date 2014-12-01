@@ -26,3 +26,7 @@
 *.exe
 *.out
 *.app
+
+diff
+*.txt
+sim_trace

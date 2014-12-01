@@ -61,6 +61,9 @@ void MESI_protocol::process_snoop_request(Mreq *request) {
 	case MESI_CACHE_ISE:
 		do_snoop_ISE(request);
 		break;
+	case MESI_CACHE_SM:
+		do_snoop_SM(request);
+		break;
 	default:
 		fatal_error("Invalid Cache State for MESI Protocol\n");
 	}
@@ -94,12 +97,13 @@ inline void MESI_protocol::do_cache_S(Mreq *request) {
 	switch (request->msg) {
 	case LOAD:
 		//Cache hit so send data to processor but nothing else happens.
+		set_shared_line();
 		send_DATA_to_proc(request->addr);
 		break;
 	case STORE:
-		//Upgrade to M state, send GETM to get most up to date value and transition to IM state.
-		send_GETM(request->addr);
-		state = MESI_CACHE_IM;
+		//Upgrade to M state, send data to processor
+        send_GETM(request->addr);
+		state = MESI_CACHE_SM;
 
 		//Counts as a cache miss
 		Sim->cache_misses++;
@@ -118,6 +122,7 @@ inline void MESI_protocol::do_cache_E(Mreq *request) {
 		break;
 	case STORE:
 		//Want to modify the value and have the only copy of the data so silently upgrade M state.
+		send_DATA_to_proc(request->addr);
 		state = MESI_CACHE_M;
 		Sim->silent_upgrades++;
 		break;
@@ -141,26 +146,68 @@ inline void MESI_protocol::do_cache_M(Mreq *request) {
 }
 
 inline void MESI_protocol::do_snoop_I(Mreq *request) {
-
+	//do nothing
+	return;
 }
 
 inline void MESI_protocol::do_snoop_S(Mreq *request) {
-
+	switch (request->msg) {
+	case GETS:
+		//Someone wants the data we are already sharing, provide it. No state change but set shared line.
+		set_shared_line();
+		break;
+	case GETM:
+		//Data is no longer valid so send current data on bus and invalidate
+		state = MESI_CACHE_I;
+		break;
+	default:
+		request->print_msg(my_table->moduleID, "ERROR");
+		fatal_error("Client: S state shouldn't see this message\n");
+	}
 }
 
 inline void MESI_protocol::do_snoop_E(Mreq *request) {
-
+	switch (request->msg) {
+	case GETS:
+		//Data no longer exclusive. Send on bus, demote to S, set shared line
+		send_DATA_on_bus(request->addr, request->src_mid);
+		state = MESI_CACHE_S;
+		set_shared_line();
+		break;
+	case GETM:
+		//Data not exclusive or shared. Send on bus, demote to I
+		send_DATA_on_bus(request->addr, request->src_mid);
+		state = MESI_CACHE_I;
+		break;
+	default:
+		request->print_msg(my_table->moduleID, "ERROR");
+		fatal_error("Client: E state shouldn't see this message\n");
+	}
 }
 
 inline void MESI_protocol::do_snoop_M(Mreq *request) {
-
+	switch (request->msg) {
+	case GETS:
+		//Data no longer exclusive. Send on bus, demote to S, set shared line
+		send_DATA_on_bus(request->addr, request->src_mid);
+		state = MESI_CACHE_S;
+		set_shared_line();
+		break;
+	case GETM:
+		//Data no longer valid. Send data on bus and demote to I.
+		send_DATA_on_bus(request->addr, request->src_mid);
+		state = MESI_CACHE_I;
+		break;
+	default:
+		request->print_msg(my_table->moduleID, "ERROR");
+		fatal_error("Client: M state shouldn't see this message\n");
+	}
 }
 
 inline void MESI_protocol::do_snoop_IM(Mreq *request) {
 	switch (request->msg) {
 	case GETM:
 	case GETS:
-		//Do nothing, doesn't affect this state.
 		break;
 	case DATA:
 		//Got the data we requested, send it to processor and move to M state.
@@ -169,13 +216,15 @@ inline void MESI_protocol::do_snoop_IM(Mreq *request) {
 		break;
 	default:
 		break;
+		request->print_msg(my_table->moduleID, "ERROR");
+		fatal_error("Client: IM state shouldn't see this message\n");
 	}
 }
+
 inline void MESI_protocol::do_snoop_ISE(Mreq *request) {
 	switch (request->msg) {
 	case GETM:
 	case GETS:
-		//Do nothing, doesn't affect this state.
 		break;
 	case DATA:
 		//Got the data we requested, send it to processor and move to S state if the shared line is set, E if the shared line is not set.
@@ -187,6 +236,26 @@ inline void MESI_protocol::do_snoop_ISE(Mreq *request) {
 		}
 		break;
 	default:
+		request->print_msg(my_table->moduleID, "ERROR");
+		fatal_error("Client: ISE state shouldn't see this message\n");
+	}
+}
+
+inline void MESI_protocol::do_snoop_SM(Mreq* request) {
+	switch (request->msg) {
+	case GETM:
+		state = MESI_CACHE_IM;
 		break;
+	case GETS:
+		set_shared_line();
+		break;
+	case DATA:
+		//Got the data we requested, send it to processor and move to S state if the shared line is set, E if the shared line is not set.
+		send_DATA_to_proc(request->addr);
+		state = MESI_CACHE_M;
+		break;
+	default:
+		request->print_msg(my_table->moduleID, "ERROR");
+		fatal_error("Client: ISE state shouldn't see this message\n");
 	}
 }

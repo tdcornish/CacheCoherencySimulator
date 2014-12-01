@@ -135,7 +135,7 @@ inline void MSI_protocol::do_snoop_IS(Mreq *request) {
 		break;
 	default:
 		request->print_msg(my_table->moduleID, "ERROR");
-		fatal_error("Client: To M state shouldn't see this message\n");
+		fatal_error("Client: IS state shouldn't see this message\n");
 	}
 }
 
@@ -167,7 +167,7 @@ inline void MSI_protocol::do_snoop_IM(Mreq *request) {
 		break;
 	default:
 		request->print_msg(my_table->moduleID, "ERROR");
-		fatal_error("Client: To M state shouldn't see this message\n");
+		fatal_error("Client: IM state shouldn't see this message\n");
 	}
 }
 

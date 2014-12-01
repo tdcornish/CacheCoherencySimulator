@@ -14,7 +14,8 @@ typedef enum {
 	MESI_CACHE_E,
 	MESI_CACHE_M,
 	MESI_CACHE_ISE,
-	MESI_CACHE_IM
+	MESI_CACHE_IM,
+	MESI_CACHE_SM
 } MESI_cache_state_t;
 
 class MESI_protocol: public Protocol {
@@ -37,8 +38,9 @@ public:
 	inline void do_snoop_S(Mreq *request);
 	inline void do_snoop_E(Mreq *request);
 	inline void do_snoop_M(Mreq *request);
-	inline void do_snoop_ISE(Mreq *request);
 	inline void do_snoop_IM(Mreq *request);
+	inline void do_snoop_ISE(Mreq *request);
+	inline void do_snoop_SM(Mreq *request);
 };
 
 #endif // _MESI_CACHE_H
