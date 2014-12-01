@@ -91,53 +91,53 @@ inline void MESI_protocol::do_cache_I(Mreq *request) {
 }
 
 inline void MESI_protocol::do_cache_S(Mreq *request) {
-    switch(request->msg){
-        case LOAD:
-            //Cache hit so send data to processor but nothing else happens.
-            send_DATA_to_proc(request->addr);
-            break;
-        case STORE:
-            //Upgrade to M state, send GETM to get most up to date value and transition to IM state.
-            send_GETM(request->addr);
-            state = MESI_CACHE_IM;
+	switch (request->msg) {
+	case LOAD:
+		//Cache hit so send data to processor but nothing else happens.
+		send_DATA_to_proc(request->addr);
+		break;
+	case STORE:
+		//Upgrade to M state, send GETM to get most up to date value and transition to IM state.
+		send_GETM(request->addr);
+		state = MESI_CACHE_IM;
 
-            //Counts as a cache miss
-            Sim->cache_misses++;
-            break;
-        default:
-            request->print_msg(my_table->moduleID, "ERROR");
-            fatal_error("Client: S state shouldn't see this message\n");
-    }
+		//Counts as a cache miss
+		Sim->cache_misses++;
+		break;
+	default:
+		request->print_msg(my_table->moduleID, "ERROR");
+		fatal_error("Client: S state shouldn't see this message\n");
+	}
 }
 
 inline void MESI_protocol::do_cache_E(Mreq *request) {
-    switch(request->msg){
-        case LOAD:
-            //Cache hit, send data to processor
-            send_DATA_to_proc(request->addr);
-            break;
-        case STORE:
-            //Want to modify the value and have the only copy of the data so silently upgrade M state.
-            state = MESI_CACHE_M;
-            Sim->silent_upgrades++;
-            break;
-        default:
-            request->print_msg(my_table->moduleID, "ERROR");
-            fatal_error("Client: E state shouldn't see this message\n");
-    }
+	switch (request->msg) {
+	case LOAD:
+		//Cache hit, send data to processor
+		send_DATA_to_proc(request->addr);
+		break;
+	case STORE:
+		//Want to modify the value and have the only copy of the data so silently upgrade M state.
+		state = MESI_CACHE_M;
+		Sim->silent_upgrades++;
+		break;
+	default:
+		request->print_msg(my_table->moduleID, "ERROR");
+		fatal_error("Client: E state shouldn't see this message\n");
+	}
 }
 
 inline void MESI_protocol::do_cache_M(Mreq *request) {
-    switch(request->msg){
-        case LOAD:
-        case STORE:
-            //cache hit, send data to processor
-            send_DATA_to_proc(request->addr);
-            break;
-        default:
-            request->print_msg(my_table->moduleID, "ERROR");
-            fatal_error("Client: M state shouldn't see this message\n");
-    }
+	switch (request->msg) {
+	case LOAD:
+	case STORE:
+		//cache hit, send data to processor
+		send_DATA_to_proc(request->addr);
+		break;
+	default:
+		request->print_msg(my_table->moduleID, "ERROR");
+		fatal_error("Client: M state shouldn't see this message\n");
+	}
 }
 
 inline void MESI_protocol::do_snoop_I(Mreq *request) {
