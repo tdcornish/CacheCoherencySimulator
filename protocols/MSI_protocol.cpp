@@ -49,11 +49,11 @@ void MSI_protocol::process_snoop_request(Mreq *request) {
 	case MSI_CACHE_M:
 		do_snoop_M(request);
 		break;
-	case MSI_CACHE_TO_M:
-		do_snoop_to_M(request);
+	case MSI_CACHE_IM:
+		do_snoop_IM(request);
 		break;
-	case MSI_CACHE_TO_S:
-		do_snoop_to_S(request);
+	case MSI_CACHE_IS:
+		do_snoop_IS(request);
 		break;
 	default:
 		fatal_error("Invalid Cache State for MSI Protocol\n");
@@ -65,7 +65,7 @@ inline void MSI_protocol::do_cache_I(Mreq *request) {
 	case LOAD:
 		//Request the data with no intention to modify it, so send a GETS on the bus and transition to the S state.
 		send_GETS(request->addr);
-		state = MSI_CACHE_TO_S;
+		state = MSI_CACHE_IS;
 
 		//also a cache miss
 		Sim->cache_misses++;
@@ -73,7 +73,7 @@ inline void MSI_protocol::do_cache_I(Mreq *request) {
 	case STORE:
 		//Request the data with intention to modify it, so send a GETM on the bus and transition to the M state.
 		send_GETM(request->addr);
-		state = MSI_CACHE_TO_M;
+		state = MSI_CACHE_IM;
 
 		//also a cache miss
 		Sim->cache_misses++;
@@ -93,7 +93,7 @@ inline void MSI_protocol::do_cache_S(Mreq *request) {
 	case STORE:
 		//Modified the data, need to issue a GETM and transition to the M state
 		send_GETM(request->addr);
-		state = MSI_CACHE_TO_M;
+		state = MSI_CACHE_IM;
 
 		//Counts as a cache miss
 		Sim->cache_misses++;
@@ -122,7 +122,7 @@ inline void MSI_protocol::do_snoop_I(Mreq *request) {
 	return;
 }
 
-inline void MSI_protocol::do_snoop_to_S(Mreq *request) {
+inline void MSI_protocol::do_snoop_IS(Mreq *request) {
 	switch (request->msg) {
 	case GETM:
 	case GETS:
@@ -148,17 +148,13 @@ inline void MSI_protocol::do_snoop_S(Mreq *request) {
 	case GETS:
 		//do nothing, doesn't affect state.
 		break;
-	case DATA:
-		//Got the DATA we requested, send to processor.
-		send_DATA_to_proc(request->addr);
-		break;
 	default:
 		request->print_msg(my_table->moduleID, "ERROR");
 		fatal_error("Client: M state shouldn't see this message\n");
 	}
 }
 
-inline void MSI_protocol::do_snoop_to_M(Mreq *request) {
+inline void MSI_protocol::do_snoop_IM(Mreq *request) {
 	switch (request->msg) {
 	case GETM:
 	case GETS:
