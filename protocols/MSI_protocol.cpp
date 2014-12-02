@@ -122,23 +122,6 @@ inline void MSI_protocol::do_snoop_I(Mreq *request) {
 	return;
 }
 
-inline void MSI_protocol::do_snoop_IS(Mreq *request) {
-	switch (request->msg) {
-	case GETM:
-	case GETS:
-		//Nothing, my request has already been made and must be completed.
-		break;
-	case DATA:
-		//Got the DATA we requested, send to processor and move to S state.
-		send_DATA_to_proc(request->addr);
-		state = MSI_CACHE_S;
-		break;
-	default:
-		request->print_msg(my_table->moduleID, "ERROR");
-		fatal_error("Client: IS state shouldn't see this message\n");
-	}
-}
-
 inline void MSI_protocol::do_snoop_S(Mreq *request) {
 	switch (request->msg) {
 	case GETM:
@@ -147,6 +130,24 @@ inline void MSI_protocol::do_snoop_S(Mreq *request) {
 		break;
 	case GETS:
 		//do nothing, doesn't affect state.
+		break;
+	default:
+		request->print_msg(my_table->moduleID, "ERROR");
+		fatal_error("Client: M state shouldn't see this message\n");
+	}
+}
+
+inline void MSI_protocol::do_snoop_M(Mreq *request) {
+	switch (request->msg) {
+	case GETM:
+		//someone else is requesting my current copy of the data to modify. Send it on the bus and move to State I.
+		send_DATA_on_bus(request->addr, request->src_mid);
+		state = MSI_CACHE_I;
+		break;
+	case GETS:
+		//Someone is requesting my data but not to modify. Send it on the bus and move to State S.
+		send_DATA_on_bus(request->addr, request->src_mid);
+		state = MSI_CACHE_S;
 		break;
 	default:
 		request->print_msg(my_table->moduleID, "ERROR");
@@ -171,20 +172,20 @@ inline void MSI_protocol::do_snoop_IM(Mreq *request) {
 	}
 }
 
-inline void MSI_protocol::do_snoop_M(Mreq *request) {
+inline void MSI_protocol::do_snoop_IS(Mreq *request) {
 	switch (request->msg) {
 	case GETM:
-		//someone else is requesting my current copy of the data to modify. Send it on the bus and move to State I.
-		send_DATA_on_bus(request->addr, request->src_mid);
-		state = MSI_CACHE_I;
-		break;
 	case GETS:
-		//Someone is requesting my data but not to modify. Send it on the bus and move to State S.
-		send_DATA_on_bus(request->addr, request->src_mid);
+		//Nothing, my request has already been made and must be completed.
+		break;
+	case DATA:
+		//Got the DATA we requested, send to processor and move to S state.
+		send_DATA_to_proc(request->addr);
 		state = MSI_CACHE_S;
 		break;
 	default:
 		request->print_msg(my_table->moduleID, "ERROR");
-		fatal_error("Client: M state shouldn't see this message\n");
+		fatal_error("Client: IS state shouldn't see this message\n");
 	}
 }
+
