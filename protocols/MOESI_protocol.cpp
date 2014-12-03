@@ -98,7 +98,6 @@ inline void MOESI_protocol::do_cache_I(Mreq *request) {
 }
 
 inline void MOESI_protocol::do_cache_S(Mreq *request) {
-
     switch (request->msg) {
         case LOAD:
             set_shared_line();
@@ -117,7 +116,6 @@ inline void MOESI_protocol::do_cache_S(Mreq *request) {
 }
 
 inline void MOESI_protocol::do_cache_E(Mreq *request) {
-
     switch (request->msg) {
         case LOAD:
             send_DATA_to_proc(request->addr);
@@ -135,7 +133,6 @@ inline void MOESI_protocol::do_cache_E(Mreq *request) {
 }
 
 inline void MOESI_protocol::do_cache_O(Mreq *request) {
-
     switch (request->msg) {
         case LOAD:
             send_DATA_to_proc(request->addr);
